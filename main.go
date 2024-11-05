@@ -18,7 +18,22 @@ type MapData struct {
 	TurnsToWin       byte
 	TotalEnemies     int32
 	TotalPlayerUnits int32
-	TileLayout       []byte
+	PlayerPositions  []struct {
+		X int
+		Y int
+	}
+	TileLayout []byte
+}
+
+type Coords struct {
+	X int16
+	Y int16
+}
+
+type UnitData struct {
+	Id string
+	X  byte
+	Y  byte
 }
 
 func main() {
@@ -74,10 +89,29 @@ func main() {
 	var tilesXor [48]byte = [48]byte{0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1}
 	var tiles, _ = rawXor(&tileBytes, tilesXor[:])
 	mapData.TileLayout = tiles
+	index += 48
+
+	for i := 0; i < int(mapData.TotalPlayerUnits); i++ {
+		var s Coords = Coords{}
+		var rawXBytes = readRawBytes(&byteArray, index, 2)
+		var unlockedXCoords, _ = rawXor(&rawXBytes, []byte{0x32, 0xb3})
+		var int16_xCoord = byteArrayToInt16(&unlockedXCoords)
+		s.X = int16_xCoord
+
+		index += 2
+		var rawYBytes = readRawBytes(&byteArray, index, 2)
+		var unlockedYCoords, _ = rawXor(&rawYBytes, []byte{0xb2, 0x28})
+		var int16_yCoord = byteArrayToInt16(&unlockedYCoords)
+		s.Y = int16_yCoord
+		index += 2
+		index = skipNullBytes(&byteArray, index)
+		fmt.Println(s)
+	}
 
 	fmt.Println(mapData)
 }
 
+// Applies a XOR byte array, allowing NULL bytes to appear as a result of the operation.
 func rawXor(byteArray *[]byte, xorKey []byte) ([]byte, error) {
 	if len(*byteArray) != len(xorKey) {
 		var err = errors.ErrUnsupported
@@ -91,6 +125,10 @@ func rawXor(byteArray *[]byte, xorKey []byte) ([]byte, error) {
 	return withXor, nil
 }
 
+// Read bytes until a NULL byte is hit, or if two consecutive NULL bytes appear,
+// returning only the first. Returns the index at which the read stopped,
+// as well as the collected byte sequence.
+// Adjusts the returned index to prevent off-by-one errors (nth byte is (n - 1) indexed).
 func readBytes(byteArray *[]byte, index int) (int, []byte) {
 	var subArray []byte = []byte{} // optimization, sort of a guess
 	var lastByte byte = 0xff
@@ -99,7 +137,7 @@ func readBytes(byteArray *[]byte, index int) (int, []byte) {
 	for {
 		currentByte := (*byteArray)[curIndex]
 		if (lastByte == 0 && currentByte == 0) || (lastByte != 0 && currentByte == 0) {
-			return curIndex, subArray
+			return curIndex + 1, subArray
 		}
 		subArray = append(subArray, currentByte)
 		lastByte = currentByte
@@ -107,6 +145,8 @@ func readBytes(byteArray *[]byte, index int) (int, []byte) {
 	}
 }
 
+// Skips consecutive NULL bytes and returns the index at which the first non-NULL byte is found.
+// Adjusts the returned index to prevent off-by-one errors (nth byte is (n - 1) indexed)
 func skipNullBytes(byteArray *[]byte, currentIndex int) int {
 	var i = 0
 	for {
@@ -118,6 +158,7 @@ func skipNullBytes(byteArray *[]byte, currentIndex int) int {
 	}
 }
 
+// Reads bytes as they are, taking NULL bytes. Returns the read bytes.
 func readRawBytes(byteArray *[]byte, curIndex int, length int) []byte {
 	var subarray []byte = []byte{}
 	for i := 0; i < length; i++ {
@@ -130,7 +171,7 @@ func readRawBytes(byteArray *[]byte, curIndex int, length int) []byte {
 func encodeOrDecodeString(encoded []byte, key []byte) []byte {
 	var decryptedArray []byte = make([]byte, len(encoded))
 	for i, curByte := range encoded {
-		var keyByte = key[i]
+		var keyByte = key[i%len(encoded)]
 		if keyByte == curByte {
 			decryptedArray[i] = keyByte
 		} else {
@@ -148,6 +189,14 @@ func byteArrayToInt32(byteArray *[]byte) int32 {
 	value |= int32((*byteArray)[1]) << 8
 	value |= int32((*byteArray)[2]) << 16
 	value |= int32((*byteArray)[3]) << 24
+
+	return value
+}
+
+func byteArrayToInt16(byteArray *[]byte) int16 {
+	var value int16
+	value |= int16((*byteArray)[0])
+	value |= int16((*byteArray)[1]) << 8
 
 	return value
 }
