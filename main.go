@@ -18,11 +18,9 @@ type MapData struct {
 	TurnsToWin       byte
 	TotalEnemies     int32
 	TotalPlayerUnits int32
-	PlayerPositions  []struct {
-		X int
-		Y int
-	}
-	TileLayout []byte
+	PlayerPositions  []Coords
+	TileLayout       []byte
+	Units            []UnitData
 }
 
 type Coords struct {
@@ -30,15 +28,33 @@ type Coords struct {
 	Y int16
 }
 
+type Stats struct {
+	HP  int16
+	Atk int16
+	Spd int16
+	Def int16
+	Res int16
+}
+
 type UnitData struct {
-	Id string
-	X  byte
-	Y  byte
+	Id              string
+	X               int16
+	Y               int16
+	Rarity          byte
+	Level           byte
+	TrueLevel       byte
+	UnknownByte     byte
+	SpecialCooldown int8
+	IsEnemy         bool
+	Stats           Stats
+	Skills          []string
 }
 
 func main() {
 	// updater.Update()
-	var mapData MapData = MapData{}
+	var mapData MapData = MapData{
+		PlayerPositions: []Coords{},
+	}
 	byteArray, _ := os.ReadFile("S8084C.bin")
 	var index = 0x41
 
@@ -48,10 +64,8 @@ func main() {
 	index += 4
 
 	var totalEnemiesBuffer = readRawBytes(&byteArray, index, 4)
-	fmt.Println(totalEnemiesBuffer)
 	var totalEnemies, _ = rawXor(&totalEnemiesBuffer, []byte{0xee, 0x10, 0x67, 0xac})
 	mapData.TotalEnemies = byteArrayToInt32(&totalEnemies)
-	fmt.Println(totalEnemies)
 	index += 4
 
 	var turnsToWin = readRawBytes(&byteArray, index, 1)[0] ^ 0xFD
@@ -92,23 +106,91 @@ func main() {
 	index += 48
 
 	for i := 0; i < int(mapData.TotalPlayerUnits); i++ {
-		var s Coords = Coords{}
+		var playerPosition Coords = Coords{}
 		var rawXBytes = readRawBytes(&byteArray, index, 2)
 		var unlockedXCoords, _ = rawXor(&rawXBytes, []byte{0x32, 0xb3})
 		var int16_xCoord = byteArrayToInt16(&unlockedXCoords)
-		s.X = int16_xCoord
+		playerPosition.X = int16_xCoord
 
 		index += 2
 		var rawYBytes = readRawBytes(&byteArray, index, 2)
 		var unlockedYCoords, _ = rawXor(&rawYBytes, []byte{0xb2, 0x28})
 		var int16_yCoord = byteArrayToInt16(&unlockedYCoords)
-		s.Y = int16_yCoord
+		playerPosition.Y = int16_yCoord
+		mapData.PlayerPositions = append(mapData.PlayerPositions, playerPosition)
 		index += 2
 		index = skipNullBytes(&byteArray, index)
-		fmt.Println(s)
+	}
+
+	index = 0x189
+
+	for i := 0; i < int(mapData.TotalEnemies); i++ {
+		var unitStruct UnitData = UnitData{}
+
+		var rawXCoordinates = readRawBytes(&byteArray, index, 2)
+		var xCoord, _ = rawXor(&rawXCoordinates, []byte{0x32, 0xb3})
+		var x = byteArrayToInt16(&xCoord)
+		unitStruct.X = x
+		index += 2
+
+		var rawYCoordinates = readRawBytes(&byteArray, index, 2)
+		var yCoord, _ = rawXor(&rawYCoordinates, []byte{0xb2, 0x28})
+		var y = byteArrayToInt16(&yCoord)
+		unitStruct.Y = y
+		index += 2
+
+		var rarityByte = readRawBytes(&byteArray, index, 1)
+		var decryptedRarity = rarityByte[0] ^ 0x61
+		unitStruct.Rarity = decryptedRarity
+		index++
+
+		var levelByte = readRawBytes(&byteArray, index, 1)
+		var decryptedDisplayedLevel = levelByte[0] ^ 0x2A
+		unitStruct.Level = decryptedDisplayedLevel
+		index++
+
+		var specialCooldownByte = readRawBytes(&byteArray, index, 1)
+		var decryptedSpecialByte = specialCooldownByte[0] ^ 0x1E
+		unitStruct.SpecialCooldown = int8(decryptedSpecialByte)
+		index++
+
+		var unk = readRawBytes(&byteArray, index, 1)
+		unitStruct.UnknownByte = unk[0]
+		index++
+
+		stats, newIndex := readStats(&byteArray, index)
+		index = newIndex
+		unitStruct.Stats = stats
+
+		mapData.Units = append(mapData.Units, unitStruct)
+
+		os.Exit(0)
 	}
 
 	fmt.Println(mapData)
+}
+
+func readStats(byteArray *[]byte, baseIndex int) (Stats, int) {
+	var stats Stats = Stats{}
+	var hpBytes = readRawBytes(byteArray, baseIndex, 2)
+	var atkBytes = readRawBytes(byteArray, baseIndex+2, 2)
+	var spdBytes = readRawBytes(byteArray, baseIndex+4, 2)
+	var defBytes = readRawBytes(byteArray, baseIndex+6, 2)
+	var resBytes = readRawBytes(byteArray, baseIndex+8, 2)
+	fmt.Println(resBytes)
+	var xorHP, _ = rawXor(&hpBytes, []byte{0x32, 0xd6})
+	var xorAtk, _ = rawXor(&atkBytes, []byte{0xa0, 0x14})
+	var xorSpd, _ = rawXor(&spdBytes, []byte{0x5e, 0xa5})
+	var xorDef, _ = rawXor(&defBytes, []byte{0x66, 0x85})
+	var xorRes, _ = rawXor(&resBytes, []byte{0xe5, 0xae})
+
+	stats.HP = byteArrayToInt16(&xorHP)
+	stats.Atk = byteArrayToInt16(&xorAtk)
+	stats.Spd = byteArrayToInt16(&xorSpd)
+	stats.Def = byteArrayToInt16(&xorDef)
+	stats.Res = byteArrayToInt16(&xorRes)
+
+	return stats, baseIndex + 10
 }
 
 // Applies a XOR byte array, allowing NULL bytes to appear as a result of the operation.
