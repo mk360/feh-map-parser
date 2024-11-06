@@ -29,25 +29,33 @@ type Coords struct {
 }
 
 type Stats struct {
-	HP  int16
-	Atk int16
-	Spd int16
-	Def int16
-	Res int16
+	HP   int16
+	Atk  int16
+	Spd  int16
+	Def  int16
+	Res  int16
+	Unk1 int16
+	Unk2 int16
+	Unk3 int16
 }
 
 type UnitData struct {
-	Id              string
-	X               int16
-	Y               int16
-	Rarity          byte
-	Level           byte
-	TrueLevel       byte
-	UnknownByte     byte
-	SpecialCooldown int8
-	IsEnemy         bool
-	Stats           Stats
-	Skills          []string
+	Id               string
+	X                int16
+	Y                int16
+	Rarity           byte
+	Level            byte
+	TrueLevel        byte
+	UnknownByte      byte
+	SpecialCooldown  int8
+	IsEnemy          bool
+	MovementGroup    byte
+	MovementDelay    int8
+	StartTurn        int8
+	GoBackToHomeTile bool
+	BreakTerrain     bool
+	Stats            Stats
+	Skills           []string
 }
 
 func main() {
@@ -159,8 +167,44 @@ func main() {
 		index++
 
 		stats, newIndex := readStats(&byteArray, index)
-		index = newIndex
 		unitStruct.Stats = stats
+		index = newIndex
+
+		var startTurnByte = readRawBytes(&byteArray, index, 1)
+		var startTurn = int8(startTurnByte[0] ^ 0xcf)
+		unitStruct.StartTurn = startTurn
+		index++
+
+		var movementGroupByte = readRawBytes(&byteArray, index, 1)
+		unitStruct.MovementGroup = movementGroupByte[0] ^ 0xcf
+		index++
+
+		var movementDelay = readRawBytes(&byteArray, index, 1)
+		unitStruct.MovementDelay = int8(movementDelay[0] ^ 0x95)
+		fmt.Println(unitStruct.MovementDelay)
+		index++
+
+		var breakTerrainByte = readRawBytes(&byteArray, index, 1)
+		var shouldBreakTerrain = breakTerrainByte[0]^0x71 != 0
+		unitStruct.BreakTerrain = shouldBreakTerrain
+		index++
+
+		index = 0x1a5
+		var tetherByte = readRawBytes(&byteArray, index, 1)
+		var shouldGoBackToMainTile = tetherByte[0]^0xb8 != 0
+		unitStruct.GoBackToHomeTile = shouldGoBackToMainTile
+		index++
+
+		var trueLevelByte = readRawBytes(&byteArray, index, 1)
+		var trueLevel = trueLevelByte[0] ^ 0x85
+		unitStruct.TrueLevel = trueLevel
+		index++
+
+		var isEnemyByte = readRawBytes(&byteArray, index, 1)
+		var isEnemy = isEnemyByte[0]^0xd0 != 0
+		unitStruct.IsEnemy = isEnemy
+
+		fmt.Println(unitStruct)
 
 		mapData.Units = append(mapData.Units, unitStruct)
 
@@ -173,16 +217,32 @@ func main() {
 func readStats(byteArray *[]byte, baseIndex int) (Stats, int) {
 	var stats Stats = Stats{}
 	var hpBytes = readRawBytes(byteArray, baseIndex, 2)
-	var atkBytes = readRawBytes(byteArray, baseIndex+2, 2)
-	var spdBytes = readRawBytes(byteArray, baseIndex+4, 2)
-	var defBytes = readRawBytes(byteArray, baseIndex+6, 2)
-	var resBytes = readRawBytes(byteArray, baseIndex+8, 2)
-	fmt.Println(resBytes)
+	baseIndex += 2
+	var atkBytes = readRawBytes(byteArray, baseIndex, 2)
+	baseIndex += 2
+	var spdBytes = readRawBytes(byteArray, baseIndex, 2)
+	baseIndex += 2
+	var defBytes = readRawBytes(byteArray, baseIndex, 2)
+	baseIndex += 2
+	var resBytes = readRawBytes(byteArray, baseIndex, 2)
+	baseIndex += 2
 	var xorHP, _ = rawXor(&hpBytes, []byte{0x32, 0xd6})
 	var xorAtk, _ = rawXor(&atkBytes, []byte{0xa0, 0x14})
 	var xorSpd, _ = rawXor(&spdBytes, []byte{0x5e, 0xa5})
 	var xorDef, _ = rawXor(&defBytes, []byte{0x66, 0x85})
 	var xorRes, _ = rawXor(&resBytes, []byte{0xe5, 0xae})
+
+	var unk1Bytes = readRawBytes(byteArray, baseIndex, 2)
+	stats.Unk1 = byteArrayToInt16(&unk1Bytes)
+	baseIndex += 2
+
+	var unk2Bytes = readRawBytes(byteArray, baseIndex, 2)
+	stats.Unk2 = byteArrayToInt16(&unk2Bytes)
+	baseIndex += 2
+
+	var unk3Bytes = readRawBytes(byteArray, baseIndex, 2)
+	stats.Unk3 = byteArrayToInt16(&unk3Bytes)
+	baseIndex += 2
 
 	stats.HP = byteArrayToInt16(&xorHP)
 	stats.Atk = byteArrayToInt16(&xorAtk)
@@ -190,7 +250,7 @@ func readStats(byteArray *[]byte, baseIndex int) (Stats, int) {
 	stats.Def = byteArrayToInt16(&xorDef)
 	stats.Res = byteArrayToInt16(&xorRes)
 
-	return stats, baseIndex + 10
+	return stats, baseIndex
 }
 
 // Applies a XOR byte array, allowing NULL bytes to appear as a result of the operation.
