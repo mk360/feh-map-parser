@@ -1,9 +1,9 @@
 package main
 
 import (
+	"encoding/binary"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 )
 
@@ -18,6 +18,7 @@ type MapData struct {
 	TurnsToWin       byte
 	TotalEnemies     int32
 	TotalPlayerUnits int32
+	FileHeader       []byte
 	PlayerPositions  []Coords
 	TileLayout       []byte
 	Units            []UnitData
@@ -64,7 +65,33 @@ func main() {
 		PlayerPositions: []Coords{},
 	}
 	byteArray, _ := os.ReadFile("S8084C.bin")
-	var index = 0x41
+	var header = readRawBytes(&byteArray, 1, 32)
+	mapData.FileHeader = header
+
+	var index = 0x29
+
+	var fieldDataByteArray = readRawBytes(&byteArray, index, 4)
+	var fieldDataPointer = int(binary.LittleEndian.Uint32(fieldDataByteArray) + 0x29)
+	var widthSlice = readRawBytes(&byteArray, fieldDataPointer, 4)
+	var mapWidth, _ = rawXor(&widthSlice, []byte{0x5f, 0xd7, 0x7c, 0x6b})
+	mapData.Width = byteArrayToInt32(&mapWidth)
+
+	var heightSlice = readRawBytes(&byteArray, fieldDataPointer+4, 4)
+	var mapHeight, _ = rawXor(&heightSlice, []byte{0xd5, 0x12, 0xaa, 0x2b})
+	mapData.Height = byteArrayToInt32(&mapHeight)
+
+	index += 8
+
+	var playerPositionsByteArray = readRawBytes(&byteArray, index, 8)
+	var playerPositionsPointer = binary.LittleEndian.Uint64(playerPositionsByteArray) + 0x20
+	fmt.Println(playerPositionsPointer)
+	index += 8
+
+	var firstUnitLocation = readRawBytes(&byteArray, index, 8)
+	var firstUnitPointer = int(binary.LittleEndian.Uint64(firstUnitLocation) + 0x21)
+	var pointerBytes = readRawBytes(&byteArray, firstUnitPointer, 2)
+	var firstUnitAddress = binary.LittleEndian.Uint16(pointerBytes) + 0x20
+	index += 8
 
 	var totalPlayerUnits = readRawBytes(&byteArray, index, 4)
 	var totalPlayersXor, _ = rawXor(&totalPlayerUnits, []byte{0x9a, 0xc7, 0x63, 0x9d})
@@ -86,32 +113,19 @@ func main() {
 
 	var turnsToDefend = readRawBytes(&byteArray, index, 1)[0] ^ 0xEC
 	mapData.TurnsToDefend = turnsToDefend
-
-	index = 0x59
-	var widthSlice = readRawBytes(&byteArray, index, 4)
-	var mapWidth, err = rawXor(&widthSlice, []byte{0x5f, 0xd7, 0x7c, 0x6b})
-
-	if err != nil {
-		log.Fatalln(err)
-	}
-
 	index += 4
-	var heightSlice = readRawBytes(&byteArray, index, 4)
-	var mapHeight, _ = rawXor(&heightSlice, []byte{0xd5, 0x12, 0xaa, 0x2b})
-	mapData.Width = byteArrayToInt32(&mapWidth)
-	mapData.Height = byteArrayToInt32(&mapHeight)
 
-	index += 4
 	var terrain = readRawBytes(&byteArray, index, 1)
 	mapData.BaseTerrain = int8(terrain[0] ^ 0x41)
 
-	index = skipNullBytes(&byteArray, index)
+	var tileBytes = readRawBytes(&byteArray, fieldDataPointer+0x10, 48)
 
-	var tileBytes = readRawBytes(&byteArray, index, 48)
 	var tilesXor [48]byte = [48]byte{0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1}
 	var tiles, _ = rawXor(&tileBytes, tilesXor[:])
 	mapData.TileLayout = tiles
 	index += 48
+
+	index = 0x108
 
 	for i := 0; i < int(mapData.TotalPlayerUnits); i++ {
 		var playerPosition Coords = Coords{}
@@ -130,11 +144,10 @@ func main() {
 		index = skipNullBytes(&byteArray, index)
 	}
 
-	index = 0x189
+	index = 0x109
 
 	for i := 0; i < int(mapData.TotalEnemies); i++ {
 		var unitStruct UnitData = UnitData{}
-
 		var rawXCoordinates = readRawBytes(&byteArray, index, 2)
 		var xCoord, _ = rawXor(&rawXCoordinates, []byte{0x32, 0xb3})
 		var x = byteArrayToInt16(&xCoord)
@@ -181,7 +194,6 @@ func main() {
 
 		var movementDelay = readRawBytes(&byteArray, index, 1)
 		unitStruct.MovementDelay = int8(movementDelay[0] ^ 0x95)
-		fmt.Println(unitStruct.MovementDelay)
 		index++
 
 		var breakTerrainByte = readRawBytes(&byteArray, index, 1)
@@ -189,7 +201,6 @@ func main() {
 		unitStruct.BreakTerrain = shouldBreakTerrain
 		index++
 
-		index = 0x1a5
 		var tetherByte = readRawBytes(&byteArray, index, 1)
 		var shouldGoBackToMainTile = tetherByte[0]^0xb8 != 0
 		unitStruct.GoBackToHomeTile = shouldGoBackToMainTile
@@ -203,15 +214,13 @@ func main() {
 		var isEnemyByte = readRawBytes(&byteArray, index, 1)
 		var isEnemy = isEnemyByte[0]^0xd0 != 0
 		unitStruct.IsEnemy = isEnemy
-
-		fmt.Println(unitStruct)
+		var newIndex, spawnCheck = readBytes(&byteArray, index)
 
 		mapData.Units = append(mapData.Units, unitStruct)
-
-		os.Exit(0)
+		fmt.Println(unitStruct)
 	}
 
-	fmt.Println(mapData)
+	index = int(firstUnitAddress)
 }
 
 func readStats(byteArray *[]byte, baseIndex int) (Stats, int) {
@@ -341,4 +350,14 @@ func byteArrayToInt16(byteArray *[]byte) int16 {
 	value |= int16((*byteArray)[1]) << 8
 
 	return value
+}
+
+func reverseByteArray(byteArray []byte) []byte {
+	var length = len(byteArray)
+	var flippedArray = make([]byte, length)
+	for i, el := range byteArray {
+		flippedArray[length-i-1] = el
+	}
+
+	return flippedArray
 }
