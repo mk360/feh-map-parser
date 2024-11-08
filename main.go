@@ -3,6 +3,8 @@ package main
 import (
 	"encoding/binary"
 	"errors"
+	"feh-map-editor/loader"
+	"feh-map-editor/updater"
 	"fmt"
 	"os"
 )
@@ -40,8 +42,14 @@ type Stats struct {
 	Unk3 int16
 }
 
+type SpawnInfo struct {
+	DependencyHero          string
+	RemainingBeforeSpawning byte
+	DefeatBeforeSpawning    byte
+}
+
 type UnitData struct {
-	Id               string
+	Name             string
 	X                int16
 	Y                int16
 	Rarity           byte
@@ -55,12 +63,14 @@ type UnitData struct {
 	StartTurn        int8
 	GoBackToHomeTile bool
 	BreakTerrain     bool
+	Spawning         SpawnInfo
 	Stats            Stats
-	Skills           []string
+	Skills           []updater.SkillStruct
 }
 
 func main() {
 	// updater.Update()
+	loader.LoadJSONs()
 	var mapData MapData = MapData{
 		PlayerPositions: []Coords{},
 	}
@@ -125,7 +135,7 @@ func main() {
 	mapData.TileLayout = tiles
 	index += 48
 
-	index = 0x108
+	index = int(playerPositionsPointer) + 1
 
 	for i := 0; i < int(mapData.TotalPlayerUnits); i++ {
 		var playerPosition Coords = Coords{}
@@ -136,9 +146,11 @@ func main() {
 
 		index += 2
 		var rawYBytes = readRawBytes(&byteArray, index, 2)
+		fmt.Println(rawXBytes, rawYBytes)
 		var unlockedYCoords, _ = rawXor(&rawYBytes, []byte{0xb2, 0x28})
 		var int16_yCoord = byteArrayToInt16(&unlockedYCoords)
 		playerPosition.Y = int16_yCoord
+		fmt.Println(playerPosition)
 		mapData.PlayerPositions = append(mapData.PlayerPositions, playerPosition)
 		index += 2
 		index = skipNullBytes(&byteArray, index)
@@ -148,6 +160,7 @@ func main() {
 
 	for i := 0; i < int(mapData.TotalEnemies); i++ {
 		var unitStruct UnitData = UnitData{}
+		unitStruct.Spawning = SpawnInfo{}
 		var rawXCoordinates = readRawBytes(&byteArray, index, 2)
 		var xCoord, _ = rawXor(&rawXCoordinates, []byte{0x32, 0xb3})
 		var x = byteArrayToInt16(&xCoord)
@@ -179,9 +192,9 @@ func main() {
 		unitStruct.UnknownByte = unk[0]
 		index++
 
-		stats, newIndex := readStats(&byteArray, index)
+		stats, postStatsIndex := readStats(&byteArray, index)
 		unitStruct.Stats = stats
-		index = newIndex
+		index = postStatsIndex
 
 		var startTurnByte = readRawBytes(&byteArray, index, 1)
 		var startTurn = int8(startTurnByte[0] ^ 0xcf)
@@ -214,13 +227,41 @@ func main() {
 		var isEnemyByte = readRawBytes(&byteArray, index, 1)
 		var isEnemy = isEnemyByte[0]^0xd0 != 0
 		unitStruct.IsEnemy = isEnemy
-		var newIndex, spawnCheck = readBytes(&byteArray, index)
+		var _, spawnCheck = readBytes(&byteArray, index)
+		var jump = 0x60 + 2
+		if len(spawnCheck) > 0 {
+			var trackedHero = encodeOrDecodeString(spawnCheck, XOR_ID)
+			var trackedHeroName, _ = loader.IdToHero[string(trackedHero)]
+			unitStruct.Spawning.DependencyHero = trackedHeroName
+			jump -= len(trackedHero) + 1
+			// TODOOOOOOOOOOO
+		}
 
 		mapData.Units = append(mapData.Units, unitStruct)
-		fmt.Println(unitStruct)
+		index += jump
 	}
 
 	index = int(firstUnitAddress)
+	var i = -1
+	for {
+		lineIndex, unitDataBytes := readBytes(&byteArray, index)
+		index = lineIndex
+		if unitDataBytes[0] == 0xD1 || unitDataBytes[0] == 0xC4 {
+			i++
+			var decryptedUnitId = encodeOrDecodeString(unitDataBytes, XOR_ID)
+			var hero = loader.IdToHero[string(decryptedUnitId)]
+			mapData.Units[i].Name = hero
+		} else if unitDataBytes[0] == 0xD2 {
+			var decryptedSkill = encodeOrDecodeString(unitDataBytes, XOR_ID)
+			var skillData, _ = loader.IdToSkill[string(decryptedSkill)]
+			mapData.Units[i].Skills = append(mapData.Units[i].Skills, skillData)
+		} else {
+			break
+		}
+		index = skipNullBytes(&byteArray, index) - 1
+	}
+
+	fmt.Println(mapData)
 }
 
 func readStats(byteArray *[]byte, baseIndex int) (Stats, int) {
@@ -350,14 +391,4 @@ func byteArrayToInt16(byteArray *[]byte) int16 {
 	value |= int16((*byteArray)[1]) << 8
 
 	return value
-}
-
-func reverseByteArray(byteArray []byte) []byte {
-	var length = len(byteArray)
-	var flippedArray = make([]byte, length)
-	for i, el := range byteArray {
-		flippedArray[length-i-1] = el
-	}
-
-	return flippedArray
 }

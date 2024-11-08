@@ -12,6 +12,12 @@ import (
 type Character struct {
 	Name string `json:"name"`
 	Id   string `json:"id"`
+	Slot string `json:"slot,omitempty"`
+}
+
+type SkillStruct struct {
+	Name string `json:"string"`
+	Slot string `json:"slot"`
 }
 
 type ResponseCharacter struct {
@@ -51,14 +57,14 @@ func fetchCharacters() (map[string]string, map[string]string) {
 	return id_to_char, char_to_id
 }
 
-func fetchSkills() (map[string]string, map[string]string) {
-	var id_to_skill = make(map[string]string)
+func fetchSkills() (map[string]SkillStruct, map[string]string) {
+	var id_to_skill = make(map[string]SkillStruct)
 	var skill_to_id = make(map[string]string)
 	var query = url.Values{}
 	query.Add("action", "cargoquery")
 	query.Add("format", "json")
 	query.Add("tables", "Skills")
-	query.Add("fields", "Name=name, TagID=id")
+	query.Add("fields", "Name=name, TagID=id, Scategory=slot")
 	query.Add("where", "RefinePath is null")
 	query.Add("limit", "500")
 	query.Add("offset", "0")
@@ -69,7 +75,10 @@ func fetchSkills() (map[string]string, map[string]string) {
 		var responseStruct ResponseCharacter = ResponseCharacter{}
 		json.Unmarshal(byteResponse, &responseStruct)
 		for _, el := range responseStruct.CargoQuery {
-			id_to_skill[el.Title.Id] = el.Title.Name
+			id_to_skill[el.Title.Id] = SkillStruct{
+				Name: el.Title.Name,
+				Slot: el.Title.Slot,
+			}
 			skill_to_id[el.Title.Name] = el.Title.Id
 		}
 		if len(responseStruct.CargoQuery) == 500 {
