@@ -1,0 +1,117 @@
+html {
+    background-color: #220C10;
+}
+
+body {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    grid-template-rows: 3fr;
+    column-gap: 2vw;
+}
+
+* {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+#map-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 90px);
+    grid-template-rows: repeat(8, 90px);
+    background-color: red;
+    grid-area: 1 / 2 / 3 /2;
+    margin: auto;
+}
+
+.unit-banner {
+    position: relative;
+    height: 280px;
+
+    img {
+        height: 100%;
+        width: 100%;
+        display: inline-block;
+        transform: rotateY(180deg);
+    }
+
+    #current-unit-name {
+        z-index: 1;
+        position: absolute;
+        inset: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 26px;
+        background-color: rgba(255, 255, 255, 0.6);
+    }
+}
+
+#unit {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr 2fr;
+}
+
+nav {
+    background-color: #2B303A;
+}
+
+#edit-unit {
+    background-color: #803D37;
+
+    ul {
+        margin: 0;
+        padding: 0;
+        justify-content: space-around;
+        list-style: none;
+        display: flex;
+        justify-content: space-around;
+    }
+
+    .tab {
+        padding: 6px 10px;
+        flex: 1;
+        text-align: center;
+        color: #BAC1B8;
+
+        &.active {
+            color: white;
+            font-weight: bold;
+            background: linear-gradient(to bottom, #D64933, #803D37);
+        }
+        
+    }
+}
+
+.tab-content {
+    color: white;
+    padding: 6px;
+}
+
+input[type="checkbox"] {
+    /* display: none; */
+
+    & + label {
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 1vw;
+
+        .checkbox-bg {
+            height: 2vh;
+            width: 2vh;
+            padding: 4px;
+            position: relative;
+            background-color: white;
+        }
+
+        .checkbox-toggle {
+            height: 100%;
+            display: none;
+        }
+    }
+
+    &:checked ~ label .checkbox-toggle {
+        background-color: #D64933;
+        display: block;
+    }
+}

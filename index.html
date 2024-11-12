@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" href="./index.css" />
+        <meta name="referrer" content="no-referrer">
+        <script src="./units.js"></script>
+    </head>
+    <body>
+        <section>
+            <div>
+                
+            </div>
+        </section>
+        <section id="map-grid">
+        </section>
+        <section id="edit-unit">
+            <div class="unit-banner">
+                <img id="current-unit-banner" src="https://feheroes.fandom.com/wiki/Special:Filepath/Sigurd_Of_the_Holy_War_BtlFace_BU.webp" />
+                <div id="current-unit-name">
+                    Sigurd: Of The Holy War
+                </div>
+            </div>
+            <div>
+                <nav id="unit-settings">
+                    <ul>
+                        <li class="tab active">Skills</li>
+                        <li class="tab">Sides</li>
+                        <li class="tab">Stats</li>
+                        <li class="tab">Spawning</li>
+                    </ul>
+                </nav>
+                <div class="tab-content skills">
+                    <table>
+                        <thead>
+                            <tr><td>Name</td><td><select id="unit-name"><option></option></select></td></tr>
+                            <tr><td>Weapon</td><td><select id="weapon"><option></option></select></td></tr>
+                            <tr><td>Assist</td><td><select id="assist"><option></option></select></td></tr>
+                            <tr><td>Special</td><td><select id="special"><option></option></select></td></tr>
+                            <tr><td>A</td><td><select id="A-passive"><option></option></select></td></tr>
+                            <tr><td>B</td><td><select id="B-passive"><option></option></select></td></tr>
+                            <tr><td>C</td><td><select id="C-passive"><option></option></select></td></tr>
+                            <tr><td>X</td><td><select id="X-passive"><option></option></select></td></tr>
+                            <tr><td>
+                                <input id="allow-illegal" type="checkbox" />
+                                <label for="allow-illegal">
+                                    <div class="checkbox-bg">
+                                        <div class="checkbox-toggle"></div>
+                                    </div>
+                                    Allow Illegal Skills
+                                </label>
+                            </td></tr>
+                        </thead>
+                    </table>
+                </div>
+            </div>
+        </section>
+        <script src="./index.js"></script>
+    </body>
+</html>
