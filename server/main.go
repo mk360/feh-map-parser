@@ -69,199 +69,202 @@ type UnitData struct {
 }
 
 func main() {
-	// updater.Update()
-	loader.LoadJSONs()
-	var mapData MapData = MapData{
-		PlayerPositions: []Coords{},
-	}
-	byteArray, _ := os.ReadFile("S8084C.bin")
-	var header = readRawBytes(&byteArray, 1, 32)
-	mapData.FileHeader = header
+	if len(os.Args) > 1 && os.Args[1] == "update" {
+		updater.Update()
+	} else {
+		loader.LoadJSONs()
+		var mapData MapData = MapData{
+			PlayerPositions: []Coords{},
+		}
+		byteArray, _ := os.ReadFile("S8084C.bin")
+		var header = readRawBytes(&byteArray, 1, 32)
+		mapData.FileHeader = header
 
-	var index = 0x29
+		var index = 0x29
 
-	var fieldDataByteArray = readRawBytes(&byteArray, index, 4)
-	var fieldDataPointer = int(binary.LittleEndian.Uint32(fieldDataByteArray) + 0x29)
-	var widthSlice = readRawBytes(&byteArray, fieldDataPointer, 4)
-	var mapWidth, _ = rawXor(&widthSlice, []byte{0x5f, 0xd7, 0x7c, 0x6b})
-	mapData.Width = byteArrayToInt32(&mapWidth)
+		var fieldDataByteArray = readRawBytes(&byteArray, index, 4)
+		var fieldDataPointer = int(binary.LittleEndian.Uint32(fieldDataByteArray) + 0x29)
+		var widthSlice = readRawBytes(&byteArray, fieldDataPointer, 4)
+		var mapWidth, _ = rawXor(&widthSlice, []byte{0x5f, 0xd7, 0x7c, 0x6b})
+		mapData.Width = byteArrayToInt32(&mapWidth)
 
-	var heightSlice = readRawBytes(&byteArray, fieldDataPointer+4, 4)
-	var mapHeight, _ = rawXor(&heightSlice, []byte{0xd5, 0x12, 0xaa, 0x2b})
-	mapData.Height = byteArrayToInt32(&mapHeight)
+		var heightSlice = readRawBytes(&byteArray, fieldDataPointer+4, 4)
+		var mapHeight, _ = rawXor(&heightSlice, []byte{0xd5, 0x12, 0xaa, 0x2b})
+		mapData.Height = byteArrayToInt32(&mapHeight)
 
-	index += 8
+		index += 8
 
-	var playerPositionsByteArray = readRawBytes(&byteArray, index, 8)
-	var playerPositionsPointer = binary.LittleEndian.Uint64(playerPositionsByteArray) + 0x20
-	fmt.Println(playerPositionsPointer)
-	index += 8
+		var playerPositionsByteArray = readRawBytes(&byteArray, index, 8)
+		var playerPositionsPointer = binary.LittleEndian.Uint64(playerPositionsByteArray) + 0x20
+		fmt.Println(playerPositionsPointer)
+		index += 8
 
-	var firstUnitLocation = readRawBytes(&byteArray, index, 8)
-	var firstUnitPointer = int(binary.LittleEndian.Uint64(firstUnitLocation) + 0x21)
-	var pointerBytes = readRawBytes(&byteArray, firstUnitPointer, 2)
-	var firstUnitAddress = binary.LittleEndian.Uint16(pointerBytes) + 0x20
-	index += 8
+		var firstUnitLocation = readRawBytes(&byteArray, index, 8)
+		var firstUnitPointer = int(binary.LittleEndian.Uint64(firstUnitLocation) + 0x21)
+		var pointerBytes = readRawBytes(&byteArray, firstUnitPointer, 2)
+		var firstUnitAddress = binary.LittleEndian.Uint16(pointerBytes) + 0x20
+		index += 8
 
-	var totalPlayerUnits = readRawBytes(&byteArray, index, 4)
-	var totalPlayersXor, _ = rawXor(&totalPlayerUnits, []byte{0x9a, 0xc7, 0x63, 0x9d})
-	mapData.TotalPlayerUnits = byteArrayToInt32(&totalPlayersXor)
-	index += 4
+		var totalPlayerUnits = readRawBytes(&byteArray, index, 4)
+		var totalPlayersXor, _ = rawXor(&totalPlayerUnits, []byte{0x9a, 0xc7, 0x63, 0x9d})
+		mapData.TotalPlayerUnits = byteArrayToInt32(&totalPlayersXor)
+		index += 4
 
-	var totalEnemiesBuffer = readRawBytes(&byteArray, index, 4)
-	var totalEnemies, _ = rawXor(&totalEnemiesBuffer, []byte{0xee, 0x10, 0x67, 0xac})
-	mapData.TotalEnemies = byteArrayToInt32(&totalEnemies)
-	index += 4
+		var totalEnemiesBuffer = readRawBytes(&byteArray, index, 4)
+		var totalEnemies, _ = rawXor(&totalEnemiesBuffer, []byte{0xee, 0x10, 0x67, 0xac})
+		mapData.TotalEnemies = byteArrayToInt32(&totalEnemies)
+		index += 4
 
-	var turnsToWin = readRawBytes(&byteArray, index, 1)[0] ^ 0xFD
-	mapData.TurnsToWin = turnsToWin
-	index++
-
-	var lastEnemyTurn = (readRawBytes(&byteArray, index, 1)[0] ^ 0xC7) != 0
-	mapData.LastEnemyTurn = lastEnemyTurn
-	index++
-
-	var turnsToDefend = readRawBytes(&byteArray, index, 1)[0] ^ 0xEC
-	mapData.TurnsToDefend = turnsToDefend
-	index += 4
-
-	var terrain = readRawBytes(&byteArray, index, 1)
-	mapData.BaseTerrain = int8(terrain[0] ^ 0x41)
-
-	var tileBytes = readRawBytes(&byteArray, fieldDataPointer+0x10, 48)
-
-	var tilesXor [48]byte = [48]byte{0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1}
-	var tiles, _ = rawXor(&tileBytes, tilesXor[:])
-	mapData.TileLayout = tiles
-	index += 48
-
-	index = int(playerPositionsPointer) + 1
-
-	for i := 0; i < int(mapData.TotalPlayerUnits); i++ {
-		var playerPosition Coords = Coords{}
-		var rawXBytes = readRawBytes(&byteArray, index, 2)
-		var unlockedXCoords, _ = rawXor(&rawXBytes, []byte{0x32, 0xb3})
-		var int16_xCoord = byteArrayToInt16(&unlockedXCoords)
-		playerPosition.X = int16_xCoord
-
-		index += 2
-		var rawYBytes = readRawBytes(&byteArray, index, 2)
-		fmt.Println(rawXBytes, rawYBytes)
-		var unlockedYCoords, _ = rawXor(&rawYBytes, []byte{0xb2, 0x28})
-		var int16_yCoord = byteArrayToInt16(&unlockedYCoords)
-		playerPosition.Y = int16_yCoord
-		fmt.Println(playerPosition)
-		mapData.PlayerPositions = append(mapData.PlayerPositions, playerPosition)
-		index += 2
-		index = skipNullBytes(&byteArray, index)
-	}
-
-	index = 0x109
-
-	for i := 0; i < int(mapData.TotalEnemies); i++ {
-		var unitStruct UnitData = UnitData{}
-		unitStruct.Spawning = SpawnInfo{}
-		var rawXCoordinates = readRawBytes(&byteArray, index, 2)
-		var xCoord, _ = rawXor(&rawXCoordinates, []byte{0x32, 0xb3})
-		var x = byteArrayToInt16(&xCoord)
-		unitStruct.X = x
-		index += 2
-
-		var rawYCoordinates = readRawBytes(&byteArray, index, 2)
-		var yCoord, _ = rawXor(&rawYCoordinates, []byte{0xb2, 0x28})
-		var y = byteArrayToInt16(&yCoord)
-		unitStruct.Y = y
-		index += 2
-
-		var rarityByte = readRawBytes(&byteArray, index, 1)
-		var decryptedRarity = rarityByte[0] ^ 0x61
-		unitStruct.Rarity = decryptedRarity
+		var turnsToWin = readRawBytes(&byteArray, index, 1)[0] ^ 0xFD
+		mapData.TurnsToWin = turnsToWin
 		index++
 
-		var levelByte = readRawBytes(&byteArray, index, 1)
-		var decryptedDisplayedLevel = levelByte[0] ^ 0x2A
-		unitStruct.Level = decryptedDisplayedLevel
+		var lastEnemyTurn = (readRawBytes(&byteArray, index, 1)[0] ^ 0xC7) != 0
+		mapData.LastEnemyTurn = lastEnemyTurn
 		index++
 
-		var specialCooldownByte = readRawBytes(&byteArray, index, 1)
-		var decryptedSpecialByte = specialCooldownByte[0] ^ 0x1E
-		unitStruct.SpecialCooldown = int8(decryptedSpecialByte)
-		index++
+		var turnsToDefend = readRawBytes(&byteArray, index, 1)[0] ^ 0xEC
+		mapData.TurnsToDefend = turnsToDefend
+		index += 4
 
-		var unk = readRawBytes(&byteArray, index, 1)
-		unitStruct.UnknownByte = unk[0]
-		index++
+		var terrain = readRawBytes(&byteArray, index, 1)
+		mapData.BaseTerrain = int8(terrain[0] ^ 0x41)
 
-		stats, postStatsIndex := readStats(&byteArray, index)
-		unitStruct.Stats = stats
-		index = postStatsIndex
+		var tileBytes = readRawBytes(&byteArray, fieldDataPointer+0x10, 48)
 
-		var startTurnByte = readRawBytes(&byteArray, index, 1)
-		var startTurn = int8(startTurnByte[0] ^ 0xcf)
-		unitStruct.StartTurn = startTurn
-		index++
+		var tilesXor [48]byte = [48]byte{0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1}
+		var tiles, _ = rawXor(&tileBytes, tilesXor[:])
+		mapData.TileLayout = tiles
+		index += 48
 
-		var movementGroupByte = readRawBytes(&byteArray, index, 1)
-		unitStruct.MovementGroup = movementGroupByte[0] ^ 0xcf
-		index++
+		index = int(playerPositionsPointer) + 1
 
-		var movementDelay = readRawBytes(&byteArray, index, 1)
-		unitStruct.MovementDelay = int8(movementDelay[0] ^ 0x95)
-		index++
+		for i := 0; i < int(mapData.TotalPlayerUnits); i++ {
+			var playerPosition Coords = Coords{}
+			var rawXBytes = readRawBytes(&byteArray, index, 2)
+			var unlockedXCoords, _ = rawXor(&rawXBytes, []byte{0x32, 0xb3})
+			var int16_xCoord = byteArrayToInt16(&unlockedXCoords)
+			playerPosition.X = int16_xCoord
 
-		var breakTerrainByte = readRawBytes(&byteArray, index, 1)
-		var shouldBreakTerrain = breakTerrainByte[0]^0x71 != 0
-		unitStruct.BreakTerrain = shouldBreakTerrain
-		index++
-
-		var tetherByte = readRawBytes(&byteArray, index, 1)
-		var shouldGoBackToMainTile = tetherByte[0]^0xb8 != 0
-		unitStruct.GoBackToHomeTile = shouldGoBackToMainTile
-		index++
-
-		var trueLevelByte = readRawBytes(&byteArray, index, 1)
-		var trueLevel = trueLevelByte[0] ^ 0x85
-		unitStruct.TrueLevel = trueLevel
-		index++
-
-		var isEnemyByte = readRawBytes(&byteArray, index, 1)
-		var isEnemy = isEnemyByte[0]^0xd0 != 0
-		unitStruct.IsEnemy = isEnemy
-		var _, spawnCheck = readBytes(&byteArray, index)
-		var jump = 0x60 + 2
-		if len(spawnCheck) > 0 {
-			var trackedHero = encodeOrDecodeString(spawnCheck, XOR_ID)
-			var trackedHeroName, _ = loader.IdToHero[string(trackedHero)]
-			unitStruct.Spawning.DependencyHero = trackedHeroName
-			jump -= len(trackedHero) + 1
-			// TODOOOOOOOOOOO
+			index += 2
+			var rawYBytes = readRawBytes(&byteArray, index, 2)
+			fmt.Println(rawXBytes, rawYBytes)
+			var unlockedYCoords, _ = rawXor(&rawYBytes, []byte{0xb2, 0x28})
+			var int16_yCoord = byteArrayToInt16(&unlockedYCoords)
+			playerPosition.Y = int16_yCoord
+			fmt.Println(playerPosition)
+			mapData.PlayerPositions = append(mapData.PlayerPositions, playerPosition)
+			index += 2
+			index = skipNullBytes(&byteArray, index)
 		}
 
-		mapData.Units = append(mapData.Units, unitStruct)
-		index += jump
-	}
+		index = 0x109
 
-	index = int(firstUnitAddress)
-	var i = -1
-	for {
-		lineIndex, unitDataBytes := readBytes(&byteArray, index)
-		index = lineIndex
-		if unitDataBytes[0] == 0xD1 || unitDataBytes[0] == 0xC4 {
-			i++
-			var decryptedUnitId = encodeOrDecodeString(unitDataBytes, XOR_ID)
-			var hero = loader.IdToHero[string(decryptedUnitId)]
-			mapData.Units[i].Name = hero
-		} else if unitDataBytes[0] == 0xD2 {
-			var decryptedSkill = encodeOrDecodeString(unitDataBytes, XOR_ID)
-			var skillData, _ = loader.IdToSkill[string(decryptedSkill)]
-			mapData.Units[i].Skills = append(mapData.Units[i].Skills, skillData)
-		} else {
-			break
+		for i := 0; i < int(mapData.TotalEnemies); i++ {
+			var unitStruct UnitData = UnitData{}
+			unitStruct.Spawning = SpawnInfo{}
+			var rawXCoordinates = readRawBytes(&byteArray, index, 2)
+			var xCoord, _ = rawXor(&rawXCoordinates, []byte{0x32, 0xb3})
+			var x = byteArrayToInt16(&xCoord)
+			unitStruct.X = x
+			index += 2
+
+			var rawYCoordinates = readRawBytes(&byteArray, index, 2)
+			var yCoord, _ = rawXor(&rawYCoordinates, []byte{0xb2, 0x28})
+			var y = byteArrayToInt16(&yCoord)
+			unitStruct.Y = y
+			index += 2
+
+			var rarityByte = readRawBytes(&byteArray, index, 1)
+			var decryptedRarity = rarityByte[0] ^ 0x61
+			unitStruct.Rarity = decryptedRarity
+			index++
+
+			var levelByte = readRawBytes(&byteArray, index, 1)
+			var decryptedDisplayedLevel = levelByte[0] ^ 0x2A
+			unitStruct.Level = decryptedDisplayedLevel
+			index++
+
+			var specialCooldownByte = readRawBytes(&byteArray, index, 1)
+			var decryptedSpecialByte = specialCooldownByte[0] ^ 0x1E
+			unitStruct.SpecialCooldown = int8(decryptedSpecialByte)
+			index++
+
+			var unk = readRawBytes(&byteArray, index, 1)
+			unitStruct.UnknownByte = unk[0]
+			index++
+
+			stats, postStatsIndex := readStats(&byteArray, index)
+			unitStruct.Stats = stats
+			index = postStatsIndex
+
+			var startTurnByte = readRawBytes(&byteArray, index, 1)
+			var startTurn = int8(startTurnByte[0] ^ 0xcf)
+			unitStruct.StartTurn = startTurn
+			index++
+
+			var movementGroupByte = readRawBytes(&byteArray, index, 1)
+			unitStruct.MovementGroup = movementGroupByte[0] ^ 0xcf
+			index++
+
+			var movementDelay = readRawBytes(&byteArray, index, 1)
+			unitStruct.MovementDelay = int8(movementDelay[0] ^ 0x95)
+			index++
+
+			var breakTerrainByte = readRawBytes(&byteArray, index, 1)
+			var shouldBreakTerrain = breakTerrainByte[0]^0x71 != 0
+			unitStruct.BreakTerrain = shouldBreakTerrain
+			index++
+
+			var tetherByte = readRawBytes(&byteArray, index, 1)
+			var shouldGoBackToMainTile = tetherByte[0]^0xb8 != 0
+			unitStruct.GoBackToHomeTile = shouldGoBackToMainTile
+			index++
+
+			var trueLevelByte = readRawBytes(&byteArray, index, 1)
+			var trueLevel = trueLevelByte[0] ^ 0x85
+			unitStruct.TrueLevel = trueLevel
+			index++
+
+			var isEnemyByte = readRawBytes(&byteArray, index, 1)
+			var isEnemy = isEnemyByte[0]^0xd0 != 0
+			unitStruct.IsEnemy = isEnemy
+			var _, spawnCheck = readBytes(&byteArray, index)
+			var jump = 0x60 + 2
+			if len(spawnCheck) > 0 {
+				var trackedHero = encodeOrDecodeString(spawnCheck, XOR_ID)
+				var trackedHeroName, _ = loader.IdToHero[string(trackedHero)]
+				unitStruct.Spawning.DependencyHero = trackedHeroName
+				jump -= len(trackedHero) + 1
+				// TODOOOOOOOOOOO
+			}
+
+			mapData.Units = append(mapData.Units, unitStruct)
+			index += jump
 		}
-		index = skipNullBytes(&byteArray, index) - 1
-	}
 
-	fmt.Println(mapData)
+		index = int(firstUnitAddress)
+		var i = -1
+		for {
+			lineIndex, unitDataBytes := readBytes(&byteArray, index)
+			index = lineIndex
+			if unitDataBytes[0] == 0xD1 || unitDataBytes[0] == 0xC4 {
+				i++
+				var decryptedUnitId = encodeOrDecodeString(unitDataBytes, XOR_ID)
+				var hero = loader.IdToHero[string(decryptedUnitId)]
+				mapData.Units[i].Name = hero
+			} else if unitDataBytes[0] == 0xD2 {
+				var decryptedSkill = encodeOrDecodeString(unitDataBytes, XOR_ID)
+				var skillData, _ = loader.IdToSkill[string(decryptedSkill)]
+				mapData.Units[i].Skills = append(mapData.Units[i].Skills, skillData)
+			} else {
+				break
+			}
+			index = skipNullBytes(&byteArray, index) - 1
+		}
+
+		fmt.Println(mapData)
+	}
 }
 
 func readStats(byteArray *[]byte, baseIndex int) (Stats, int) {

@@ -10,9 +10,10 @@ import (
 )
 
 type Character struct {
-	Name string `json:"name"`
-	Id   string `json:"id"`
-	Slot string `json:"slot,omitempty"`
+	Name     string `json:"name"`
+	Id       string `json:"id"`
+	WikiName string `json:"wikiName,omitempty"`
+	Slot     string `json:"slot,omitempty"`
 }
 
 type SkillStruct struct {
@@ -26,14 +27,19 @@ type ResponseCharacter struct {
 	} `json:"cargoquery"`
 }
 
-func fetchCharacters() (map[string]string, map[string]string) {
+type CharacterData struct {
+	Id       string `json:"id"`
+	WikiName string `json:"wikiName"`
+}
+
+func fetchCharacters() (map[string]string, map[string]CharacterData) {
 	var id_to_char = make(map[string]string)
-	var char_to_id = make(map[string]string)
+	var char_to_id = make(map[string]CharacterData)
 	var query = url.Values{}
 	query.Add("action", "cargoquery")
 	query.Add("format", "json")
 	query.Add("tables", "Units")
-	query.Add("fields", "_pageName=name, TagID=id")
+	query.Add("fields", "_pageName=name, TagID=id, WikiName=wikiName")
 	query.Add("limit", "500")
 	query.Add("offset", "0")
 
@@ -43,8 +49,12 @@ func fetchCharacters() (map[string]string, map[string]string) {
 		var responseStruct ResponseCharacter = ResponseCharacter{}
 		json.Unmarshal(byteResponse, &responseStruct)
 		for _, el := range responseStruct.CargoQuery {
+			var charData CharacterData = CharacterData{
+				Id:       el.Title.Id,
+				WikiName: el.Title.WikiName,
+			}
 			id_to_char[el.Title.Id] = el.Title.Name
-			char_to_id[el.Title.Name] = el.Title.Id
+			char_to_id[el.Title.Name] = charData
 		}
 		if len(responseStruct.CargoQuery) == 500 {
 			var intOffset, _ = strconv.Atoi(query.Get("offset"))
@@ -105,4 +115,9 @@ func Update() {
 
 	var byteIdSkills, _ = json.Marshal(id_to_skill)
 	os.WriteFile("ids_to_skills.json", byteIdSkills, 0644)
+
+	var jsUnitsVariable = []byte("const UNITS = ")
+	jsUnitsVariable = append(jsUnitsVariable, byteChars...)
+
+	os.WriteFile("../units.js", jsUnitsVariable, 0644)
 }
