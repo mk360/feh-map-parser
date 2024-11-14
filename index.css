@@ -2,6 +2,14 @@ html {
     background-color: #220C10;
 }
 
+* {
+    --switch-height: 34px;
+    --switch-padding: 8px;
+    --switch-width: calc((var(--switch-height) * 2) - var(--switch-padding));
+    --slider-height: calc(var(--switch-height) - var(--switch-padding));
+    --slider-on: calc(var(--switch-height) - var(--switch-padding));
+  }
+
 body {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
@@ -88,7 +96,7 @@ nav {
 }
 
 input[type="checkbox"] {
-    /* display: none; */
+    display: none;
 
     & + label {
         cursor: pointer;
@@ -106,12 +114,102 @@ input[type="checkbox"] {
 
         .checkbox-toggle {
             height: 100%;
-            display: none;
+            background-color: white;
+            transition: background-color linear 100ms;
         }
     }
 
-    &:checked ~ label .checkbox-toggle {
-        background-color: #D64933;
-        display: block;
+    &:checked ~ label {
+        .checkbox-toggle {
+            background-color: #D64933;
+            display: block;
+        }
+    }
+}
+
+select {
+    width: 100%;
+}
+
+a, a:visited {
+    text-decoration: none;
+    height: 100%;
+    width: 100%;
+    color: white;
+    display: block;
+}
+
+.hide {
+    display: none;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: var(--switch-width);
+    height: var(--switch-height);
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    -webkit-transition: .4s;
+    transition: .4s;
+}
+
+.slider:before {
+    content: "";
+    position: absolute;
+    height: var(--slider-height);
+    width: var(--slider-height);
+    left: calc(var(--switch-padding) / 2);
+    bottom: calc(var(--switch-padding) / 2);
+    background-color: #B31517;
+    transition: .4s;
+}
+
+input:checked ~ label .slider::before {
+    background-color: #0F248A;
+}
+
+input:checked ~ label .slider:before {
+    transform: translateX(var(--slider-on));
+}
+
+.slider.round {
+    border-radius: var(--slider-height);
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}
+
+input[name="ai-behavior"] {
+    display: none;
+}
+
+label.option {
+    padding: 10px;
+    display: block;
+    cursor: pointer;
+    background-color: #2B303A;
+    text-align: center;
+    transition: background-color linear 300ms;
+
+    #movement-group:checked ~ table &[for="movement-group"],
+    #set-turns:checked ~ table &[for="set-turns"] {
+        background-color: #15B374;
+        color: #2B303A;
     }
 }

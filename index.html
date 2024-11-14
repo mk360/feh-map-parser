@@ -4,9 +4,11 @@
         <link rel="stylesheet" href="./index.css" />
         <meta name="referrer" content="no-referrer">
         <script src="./units.js"></script>
+        <script src="./skills.js"></script>
+        <script src="./learnsets.js"></script>
     </head>
     <body>
-        <section>
+        <section id="presentation">
             <div>
                 
             </div>
@@ -23,13 +25,13 @@
             <div>
                 <nav id="unit-settings">
                     <ul>
-                        <li class="tab active">Skills</li>
-                        <li class="tab">Sides</li>
-                        <li class="tab">Stats</li>
-                        <li class="tab">Spawning</li>
+                        <li class="tab"><a id="skills" href="#">Skills</a></li>
+                        <li class="tab active"><a id="sides" href="#">Sides</a></li>
+                        <li class="tab"><a id="stats" href="#">Stats</a></li>
+                        <li class="tab"><a id="spawning" href="#">Spawning</a></li>
                     </ul>
                 </nav>
-                <div class="tab-content skills">
+                <div class="tab-content hide" id="tab-skills">
                     <table>
                         <thead>
                             <tr><td>Name</td><td><select id="unit-name"><option></option></select></td></tr>
@@ -39,8 +41,9 @@
                             <tr><td>A</td><td><select id="A-passive"><option></option></select></td></tr>
                             <tr><td>B</td><td><select id="B-passive"><option></option></select></td></tr>
                             <tr><td>C</td><td><select id="C-passive"><option></option></select></td></tr>
+                            <tr><td>S</td><td><select id="S-passive"><option></option></select></td></tr>
                             <tr><td>X</td><td><select id="X-passive"><option></option></select></td></tr>
-                            <tr><td>
+                            <tr><td></td><td>
                                 <input id="allow-illegal" type="checkbox" />
                                 <label for="allow-illegal">
                                     <div class="checkbox-bg">
@@ -52,6 +55,53 @@
                         </thead>
                     </table>
                 </div>
+                <div class="tab-content" id="tab-sides">
+                    <h2>Unit Side</h2>
+                    <input id="side" type="checkbox" />
+                    <label for="side">
+                        <span>Enemy</span>
+                        <div class="switch">
+                            <div class="slider round"></div>
+                        </div>
+                        <span>Player</span>
+                    </label>
+                    <h2>AI Behavior</h2>
+                    <span>These settings only apply if unit is an enemy.</span>
+                    <input type="radio" name="ai-behavior" id="movement-group" value="movement-group" />
+                    <input type="radio" name="ai-behavior" id="set-turns" value="set-turns" />
+                    <table>
+                        <tr>
+                            <td><label for="movement-group" class="option">Assign a <br />Movement Group</label></td>
+                            <td><label for="set-turns" class="option">Move after a<br />set amount of turns</label></td>
+                        </tr>
+                        <tr>
+                            <td><label for="mvt-option-value">Value</label></td>
+                            <td><input type="number" id="mvt-option-value" /></td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <label for="engagement-delay">Delay after engagement</label>
+                            </td>
+                            <td>
+                                <input type="number" id="engagement-delay" />
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="tab-content hide" id="tab-stats">
+                    <h2>Level and Rarity</h2>
+                    <label for="level">Level</label> <input type="number" max="40" step="1" min="1" id="level" />
+                    <label for="true-level">True Level</label> <input type="number" step="1" min="1" id="true-level" />
+                    <label for="rarity">Rarity</label> <input type="number" step="1" min="1" max="5" id="rarity" />
+
+                    <h2>Stats (without skills)</h2>
+                    <table>
+                        <tr><td><label for="hp">HP</label></td><td><input type="number" min="1" step="1" id="hp" /></td></tr>
+                        <tr><td><label for="atk">Atk</label></td><td><input type="number" min="1" step="1" id="atk" /></td><td><label for="spd">Spd</label></td><td><input type="number" min="1" step="1" id="spd" /></td></tr>
+                        <tr><td><label for="def">Def</label></td><td><input type="number" min="1" step="1" id="def" /></td><td><label for="res">Res</label></td><td><input type="number" min="1" step="1" id="res" /></td></tr>
+                    </table>
+                </div>
+                <div class="tab-content hide" id="tab-spawning"></div>
             </div>
         </section>
         <script src="./index.js"></script>
