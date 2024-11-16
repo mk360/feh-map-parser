@@ -12,6 +12,7 @@ import (
 var XOR_ID []byte = []byte{0x81, 0x00, 0x80, 0xA4, 0x5A, 0x16, 0x6F, 0x78, 0x57, 0x81, 0x2D, 0xF7, 0xFC, 0x66, 0x0F, 0x27, 0x75, 0x35, 0xB4, 0x34, 0x10, 0xEE, 0xA2, 0xDB, 0xCC, 0xE3, 0x35, 0x99, 0x43, 0x48, 0xD2, 0xBB, 0x93, 0xC1}
 
 type MapData struct {
+	Id               string
 	LastEnemyTurn    bool
 	Width            int32
 	Height           int32
@@ -96,7 +97,6 @@ func main() {
 
 		var playerPositionsByteArray = readRawBytes(&byteArray, index, 8)
 		var playerPositionsPointer = binary.LittleEndian.Uint64(playerPositionsByteArray) + 0x20
-		fmt.Println(playerPositionsPointer)
 		index += 8
 
 		var firstUnitLocation = readRawBytes(&byteArray, index, 8)
@@ -148,11 +148,9 @@ func main() {
 
 			index += 2
 			var rawYBytes = readRawBytes(&byteArray, index, 2)
-			fmt.Println(rawXBytes, rawYBytes)
 			var unlockedYCoords, _ = rawXor(&rawYBytes, []byte{0xb2, 0x28})
 			var int16_yCoord = byteArrayToInt16(&unlockedYCoords)
 			playerPosition.Y = int16_yCoord
-			fmt.Println(playerPosition)
 			mapData.PlayerPositions = append(mapData.PlayerPositions, playerPosition)
 			index += 2
 			index = skipNullBytes(&byteArray, index)
@@ -239,9 +237,17 @@ func main() {
 				// TODOOOOOOOOOOO
 			}
 
+			if i+1 != int(mapData.TotalEnemies) {
+				index += jump
+			} else {
+				index += 0x12
+			}
+
 			mapData.Units = append(mapData.Units, unitStruct)
-			index += jump
 		}
+
+		var mapIdBytes = readRawBytes(&byteArray, index, 4)
+		mapData.Id = string(encodeOrDecodeString(mapIdBytes, XOR_ID))
 
 		index = int(firstUnitAddress)
 		var i = -1
