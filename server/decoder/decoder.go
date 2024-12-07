@@ -140,13 +140,13 @@ func Decode(filename string) MapData {
 		var rawXBytes = readRawBytes(&byteArray, index, 2)
 		var unlockedXCoords, _ = rawXor(&rawXBytes, []byte{0x32, 0xb3})
 		var int16_xCoord = byteArrayToInt16(&unlockedXCoords)
-		playerPosition.X = int16_xCoord
+		playerPosition.X = int16_xCoord + 1
 
 		index += 2
 		var rawYBytes = readRawBytes(&byteArray, index, 2)
 		var unlockedYCoords, _ = rawXor(&rawYBytes, []byte{0xb2, 0x28})
 		var int16_yCoord = byteArrayToInt16(&unlockedYCoords)
-		playerPosition.Y = int16_yCoord
+		playerPosition.Y = int16_yCoord + 1
 		mapData.PlayerPositions = append(mapData.PlayerPositions, playerPosition)
 		index += 2
 		index = skipNullBytes(&byteArray, index)
@@ -160,13 +160,13 @@ func Decode(filename string) MapData {
 		var rawXCoordinates = readRawBytes(&byteArray, index, 2)
 		var xCoord, _ = rawXor(&rawXCoordinates, []byte{0x32, 0xb3})
 		var x = byteArrayToInt16(&xCoord)
-		unitStruct.X = x
+		unitStruct.X = x + 1
 		index += 2
 
 		var rawYCoordinates = readRawBytes(&byteArray, index, 2)
 		var yCoord, _ = rawXor(&rawYCoordinates, []byte{0xb2, 0x28})
 		var y = byteArrayToInt16(&yCoord)
-		unitStruct.Y = y
+		unitStruct.Y = y + 1
 		index += 2
 
 		var rarityByte = readRawBytes(&byteArray, index, 1)

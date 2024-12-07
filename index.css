@@ -15,7 +15,8 @@ body {
     grid-template-rows: 0.25fr 3fr;
     main {
         display: grid;
-        grid-template-columns: 1fr 3fr 1fr;
+        grid-template-columns: 1.5fr 3fr 1.5fr;
+        grid-template-rows: 1fr;
         column-gap: 2vw;
     }
 }
@@ -43,9 +44,9 @@ body {
     #bg {
         position: absolute;
         inset: 0;
-        z-index: 1;
+        z-index: -1;
         background-color: blue;
-        opacity: 0.2;
+        opacity: 0.4;
         pointer-events: none;
     }
 
@@ -53,6 +54,7 @@ body {
         padding: 0;
         border-radius: 0;
         cursor: pointer;
+        background-color: rgba(255, 255, 255, 0);
     }
 }
 
@@ -151,6 +153,15 @@ input[type="checkbox"] {
             display: block;
         }
     }
+}
+
+.mini {
+    height: 90px;
+    max-width: 90px;
+}
+
+.enemy {
+    transform: rotateY(180deg);
 }
 
 select {
