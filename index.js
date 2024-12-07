@@ -11,6 +11,7 @@ const PASSIVE_C = document.getElementById("C-passive");
 const PASSIVE_S = document.getElementById("S-passive");
 const PASSIVE_X = document.getElementById("X-passive");
 
+const TILE_TO_UNIT_MAP = {};
 
 unitNameSelect.onchange = function(e) {
     const { target: { value } } = e;
@@ -79,3 +80,26 @@ for (let unit in UNITS) {
     option.innerHTML = unit;
     unitNameSelect.appendChild(option);
 }
+
+fetch("http://localhost:3535/map?filename=S8084C.bin").then((r) => r.json()).then((response) => {
+    for (let unit of response.Units) {
+        const { X, Y, Name } = unit;
+        console.log({ X, Y })
+        const img = document.createElement("img");
+        img.classList.add("mini", "enemy");
+        img.loading = "lazy";
+        img.src = `https://feheroes.fandom.com/Special:Filepath/${UNITS[Name].wikiName.replace(" ENEMY", "").replace(/ /g, "_")}_Mini_Unit_Idle.png`;
+        TILE_TO_UNIT_MAP[`${Y}-${X}`] = unit;
+        document.getElementById(`${Y}-${X}`).appendChild(img);
+    }
+    document.getElementById("bg").style.background = `url(https://feheroes.fandom.com/Special:Filepath/Map_${response.Id}.png)`;
+});
+
+function loadCompleteLearnsets() {
+    
+}
+
+// var i = document.createElement("img");
+// i.src = `https://feheroes.fandom.com/Special:Filepath/Micaiah_Dawning_Maiden_Mini_Unit_Idle.png`;
+// i.classList.add("mini");
+// document.body.appendChild(i);
