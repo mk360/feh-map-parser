@@ -8,166 +8,248 @@
         <script src="./learnsets.js"></script>
     </head>
     <body>
-        <header></header>
-        <main>
-            <section id="presentation">
-                <div id="chapter-banner">
+        <header>
+            <div class="logo">Fire Emblem Heroes Map Editor</div>
+            <div class="file-input-container">
+                <label for="map-file" class="file-input-label">
+                    <span>Choose Map File</span>
+                </label>
+                <input type="file" id="map-file" class="file-input">
+                <button class="action-button">Load Map</button>
+            </div>
+        </header>
+        
+        <div class="main-content">
+            <div class="grid-container">
+                <div id="grid" class="grid">
+                    <!-- Generate 6x8 grid -->
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const grid = document.querySelector('.grid');
+                            for (let row = 1; row <= 8; row++) {
+                                for (let col = 1; col <= 6; col++) {
+                                    const cell = document.createElement('div');
+                                    cell.className = 'grid-cell';
+                                    cell.setAttribute('data-coords', `${col},${row}`);
+                                    cell.addEventListener('click', function() {
+                                        // Toggle selection
+                                        document.querySelectorAll('.grid-cell').forEach(c => c.classList.remove('selected'));
+                                        cell.classList.add('selected');
+                                    });
+                                    grid.appendChild(cell);
+                                }
+                            }
+                        });
+                    </script>
+                </div>
+            </div>
+            
+            <div class="editor-panel">
+                <div class="character-preview">
+                    <img id="current-unit-banner" alt="Character Preview" class="character-image">
+                    <h3 id="current-unit-name" class="character-title">Sigurd: Of the Holy War</h3>
+                </div>
+                
+                <div class="tab-container">
+                    <a class="tab active">Skills</a>
+                    <a class="tab">Stats</a>
+                    <a class="tab">AI</a>
+                    <a class="tab">Spawning</a>
+                </div>
+                
+                <div id="Skills" class="tab-content">
+                    <h3>Unit and Skills</h3>
+                    
+                    <div class="form-group">
+                        <label for="name">Name</label>
+                        <select id="name" class="form-control">
+                            <option></option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="weapon">Weapon</label>
+                        <select id="weapon" class="form-control">
+                            <option></option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="assist">Assist</label>
+                        <select id="assist" class="form-control">
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="special">Special</label>
+                        <select id="special" class="form-control">
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="a-skill">A</label>
+                        <select id="a-skill" class="form-control">
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="b-skill">B</label>
+                        <select id="b-skill" class="form-control">
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="c-skill">C</label>
+                        <select id="c-skill" class="form-control">
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="s-skill">S</label>
+                        <select id="s-skill" class="form-control">
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="x-skill">X</label>
+                        <select id="x-skill" class="form-control">
+                        </select>
+                    </div>
                     
                 </div>
-                <div id="map-settings">
-                    <input type="file" id="load-file" />
-                    <label for="load-file">Load Map</label>
-                </div>
-            </section>
-            <section id="map-grid">
-                <div id="bg"></div>
-                <button id="8-1" class="grid-cell"></button>
-                <button id="8-2" class="grid-cell"></button>
-                <button id="8-3" class="grid-cell"></button>
-                <button id="8-4" class="grid-cell"></button>
-                <button id="8-5" class="grid-cell"></button>
-                <button id="8-6" class="grid-cell"></button>
-
-                <button id="7-1" class="grid-cell"></button>
-                <button id="7-2" class="grid-cell"></button>
-                <button id="7-3" class="grid-cell"></button>
-                <button id="7-4" class="grid-cell"></button>
-                <button id="7-5" class="grid-cell"></button>
-                <button id="7-6" class="grid-cell"></button>
-
-                <button id="6-1" class="grid-cell"></button>
-                <button id="6-2" class="grid-cell"></button>
-                <button id="6-3" class="grid-cell"></button>
-                <button id="6-4" class="grid-cell"></button>
-                <button id="6-5" class="grid-cell"></button>
-                <button id="6-6" class="grid-cell"></button>
-
-                <button id="5-1" class="grid-cell"></button>
-                <button id="5-2" class="grid-cell"></button>
-                <button id="5-3" class="grid-cell"></button>
-                <button id="5-4" class="grid-cell"></button>
-                <button id="5-5" class="grid-cell"></button>
-                <button id="5-6" class="grid-cell"></button>
-
-                <button id="4-1" class="grid-cell"></button>
-                <button id="4-2" class="grid-cell"></button>
-                <button id="4-3" class="grid-cell"></button>
-                <button id="4-4" class="grid-cell"></button>
-                <button id="4-5" class="grid-cell"></button>
-                <button id="4-6" class="grid-cell"></button>
-
-                <button id="3-1" class="grid-cell"></button>
-                <button id="3-2" class="grid-cell"></button>
-                <button id="3-3" class="grid-cell"></button>
-                <button id="3-4" class="grid-cell"></button>
-                <button id="3-5" class="grid-cell"></button>
-                <button id="3-6" class="grid-cell"></button>
-
-                <button id="2-1" class="grid-cell"></button>
-                <button id="2-2" class="grid-cell"></button>
-                <button id="2-3" class="grid-cell"></button>
-                <button id="2-4" class="grid-cell"></button>
-                <button id="2-5" class="grid-cell"></button>
-                <button id="2-6" class="grid-cell"></button>
-
-                <button id="1-1" class="grid-cell"></button>
-                <button id="1-2" class="grid-cell"></button>
-                <button id="1-3" class="grid-cell"></button>
-                <button id="1-4" class="grid-cell"></button>
-                <button id="1-5" class="grid-cell"></button>
-                <button id="1-6" class="grid-cell"></button>
-            </section>
-            <section id="edit-unit">
-                <div class="unit-banner">
-                    <img id="current-unit-banner" src="https://feheroes.fandom.com/wiki/Special:Filepath/Sigurd_Of_the_Holy_War_BtlFace_BU.webp" />
-                    <div id="current-unit-name">
-                        Sigurd: Of The Holy War
+                <div id="Stats" class="tab-content hide">
+                    <h3>Unit Stats</h3>
+                    
+                    <!-- Rarity Settings -->
+                    <div class="form-group">
+                        <label for="rarity">Rarity</label>
+                        <div class="range-with-value">
+                            <input type="range" id="rarity" class="form-range" min="1" max="5" step="1" value="5">
+                            <span class="range-value">5 ★</span>
+                        </div>
+                        <div class="star-display">★★★★★</div>
                     </div>
-                </div>
-                <div>
-                    <nav id="unit-settings">
-                        <ul>
-                            <li class="tab"><a id="skills" href="#">Skills</a></li>
-                            <li class="tab active"><a id="sides" href="#">Sides</a></li>
-                            <li class="tab"><a id="stats" href="#">Stats</a></li>
-                            <li class="tab"><a id="spawning" href="#">Spawning</a></li>
-                        </ul>
-                    </nav>
-                    <div class="tab-content hide" id="tab-skills">
-                        <h2>Unit and Skills</h2>
-                        <table>
-                            <tbody>
-                                <tr><td>Name</td><td><select id="unit-name"><option></option></select></td></tr>
-                                <tr><td>Weapon</td><td><select id="weapon"><option></option></select></td></tr>
-                                <tr><td>Assist</td><td><select id="assist"><option></option></select></td></tr>
-                                <tr><td>Special</td><td><select id="special"><option></option></select></td></tr>
-                                <tr><td>A</td><td><select id="A-passive"><option></option></select></td></tr>
-                                <tr><td>B</td><td><select id="B-passive"><option></option></select></td></tr>
-                                <tr><td>C</td><td><select id="C-passive"><option></option></select></td></tr>
-                                <tr><td>S</td><td><select id="S-passive"><option></option></select></td></tr>
-                                <tr><td>X</td><td><select id="X-passive"><option></option></select></td></tr>
-                                <tr><td></td><td>
-                                    <input id="allow-illegal" type="checkbox" />
-                                    <label for="allow-illegal">
-                                        <div class="checkbox-bg">
-                                            <div class="checkbox-toggle"></div>
-                                        </div>
-                                        Allow Illegal Skills
-                                    </label>
-                                </td></tr>
-                            </tbody>
-                        </table>
+                    
+                    <!-- Level Settings -->
+                    <div class="stat-group">
+                        <div class="form-group half">
+                            <label for="display-level">Display Level</label>
+                            <input type="number" id="display-level" class="form-control" min="1" max="99" step="1" value="40">
+                        </div>
+                        <div class="form-group half">
+                            <label for="true-level">True Level</label>
+                            <input type="number" id="true-level" class="form-control" min="1" max="99" step="1" value="40">
+                        </div>
                     </div>
-                    <div class="tab-content" id="tab-sides">
-                        <h2>Unit Side</h2>
-                        <input id="side" type="checkbox" />
-                        <label for="side">
-                            <span>Enemy</span>
-                            <div class="switch">
-                                <div class="slider round"></div>
+                    
+                    <!-- Stats -->
+                    <div class="stats-container">
+                        <h4>Base Stats (without skills)</h4>
+                        
+                        <div class="stat-row">
+                            <div class="stat-label">HP</div>
+                            <div class="stat-control">
+                                <input type="number" id="hp-stat" class="form-control stat-input" min="0" max="99" step="1" value="40">
+                                <input type="range" id="hp-slider" class="stat-slider" min="0" max="99" step="1" value="40" aria-label="HP">
                             </div>
-                            <span>Player</span>
-                        </label>
-                        <h2>AI Behavior</h2>
-                        <span>These settings only apply if unit is an enemy.</span>
-                        <input type="radio" name="ai-behavior" id="movement-group" value="movement-group" />
-                        <input type="radio" name="ai-behavior" id="set-turns" value="set-turns" />
-                        <table>
-                            <tr>
-                                <td><label for="movement-group" class="option">Assign a <br />Movement Group</label></td>
-                                <td><label for="set-turns" class="option">Move after a<br />set amount of turns</label></td>
-                            </tr>
-                            <tr>
-                                <td><label for="mvt-option-value">Value</label></td>
-                                <td><input type="number" id="mvt-option-value" /></td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <label for="engagement-delay">Delay after engagement</label>
-                                </td>
-                                <td>
-                                    <input type="number" id="engagement-delay" />
-                                </td>
-                            </tr>
-                        </table>
+                        </div>
+                        
+                        <div class="stat-row">
+                            <div class="stat-label">ATK</div>
+                            <div class="stat-control">
+                                <input type="number" id="atk-stat" class="form-control stat-input" min="0" max="99" step="1" value="35">
+                                <input type="range" id="atk-slider" class="stat-slider" min="0" max="99" step="1" value="35" aria-label="Attack">
+                            </div>
+                        </div>
+                        
+                        <div class="stat-row">
+                            <div class="stat-label">SPD</div>
+                            <div class="stat-control">
+                                <input type="number" id="spd-stat" class="form-control stat-input" min="0" max="99" step="1" value="38">
+                                <input type="range" id="spd-slider" class="stat-slider" min="0" max="99" step="1" value="38" aria-label="Speed">
+                            </div>
+                        </div>
+                        
+                        <div class="stat-row">
+                            <div class="stat-label">DEF</div>
+                            <div class="stat-control">
+                                <input type="number" id="def-stat" class="form-control stat-input" min="0" max="99" step="1" value="25">
+                                <input type="range" id="def-slider" class="stat-slider" min="0" max="99" step="1" value="25" aria-label="Defense">
+                            </div>
+                        </div>
+                        
+                        <div class="stat-row">
+                            <div class="stat-label">RES</div>
+                            <div class="stat-control">
+                                <input type="number" id="res-stat" class="form-control stat-input" min="0" max="99" step="1" value="28">
+                                <input type="range" id="res-slider" class="stat-slider" min="0" max="99" step="1" value="28" aria-label="Resistance">
+                            </div>
+                        </div>
                     </div>
-                    <div class="tab-content hide" id="tab-stats">
-                        <h2>Level and Rarity</h2>
-                        <label for="level">Level</label> <input type="number" max="40" step="1" min="1" id="level" />
-                        <label for="true-level">True Level</label> <input type="number" step="1" min="1" id="true-level" />
-                        <label for="rarity">Rarity</label> <input type="number" step="1" min="1" max="5" id="rarity" />
+                    <div class="stats-container form-group">
+                        <h4>Cooldown Settings</h4>
     
-                        <h2>Stats (without skills)</h2>
-                        <table>
-                            <tr><td><label for="hp">HP</label></td><td><input type="number" min="1" step="1" id="hp" /></td></tr>
-                            <tr><td><label for="atk">Atk</label></td><td><input type="number" min="1" step="1" id="atk" /></td><td><label for="spd">Spd</label></td><td><input type="number" min="1" step="1" id="spd" /></td></tr>
-                            <tr><td><label for="def">Def</label></td><td><input type="number" min="1" step="1" id="def" /></td><td><label for="res">Res</label></td><td><input type="number" min="1" step="1" id="res" /></td></tr>
-                        </table>
+                        <div class="unit-type-selector">
+                            <div class="radio-group">
+                                <label class="radio-label">
+                                    <input type="radio" id="default-cooldown" name="cooldown-type" value="default" checked>
+                                    <span class="radio-custom ally"></span>
+                                    Default Cooldown
+                                </label>
+                                
+                                <label class="radio-label">
+                                    <input type="radio" id="custom-cooldown" name="cooldown-type" value="custom">
+                                    <span class="radio-custom enemy"></span>
+                                    Custom Cooldown
+                                </label>
+                            </div>
+                        </div>
+                    
+                        <div id="custom-cooldown-container" class="form-group" style="display: none; margin-top: 12px;">
+                            <label for="custom-cooldown">Custom Cooldown Value</label>
+                            <div class="range-with-value">
+                                <input type="range" id="custom-cooldown-range" class="form-range" min="0" max="10" step="1" value="3">
+                                <span class="range-value">3</span>
+                            </div>
+                            <input type="number" id="custom-cooldown-input" class="form-control" min="0" max="10" step="1" value="3" style="margin-top: 8px;">
+                            <div id="custom-cooldown-container" class="form-group" style="display: none; margin-top: 12px;">
+                                <label for="custom-cooldown">Custom Cooldown</label>
+                                <div class="range-with-value">
+                                    <input type="range" id="custom-cooldown-slider" class="form-range" min="0" max="10" step="1" value="3">
+                                    <span class="range-value">3</span>
+                                </div>
+                                <input type="number" id="custom-cooldown-input" class="form-control" min="0" max="10" step="1" value="3" style="margin-top: 8px;">
+                            </div>
+                        </div>
                     </div>
-                    <div class="tab-content hide" id="tab-spawning"></div>
                 </div>
-            </section>
-        </main>
+                <div id="Spawning" class="tab-content hide">
+                    <h3>Unit Type</h3>
+                </div>
+                <div id="AI" class="tab-content hide">
+                    <h3>AI Settings</h3>
+                    
+                    <div class="form-group unit-type-selector">
+                        <div class="radio-group">
+                            <label class="radio-label">
+                                <input type="radio" name="unit-type" value="ally" checked>
+                                <span class="radio-custom ally"></span>
+                                Ally
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="unit-type" value="enemy">
+                                <span class="radio-custom enemy"></span>
+                                Enemy
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            Fire Emblem Heroes Map Editor © 2025
+        </footer>
         <script src="./index.js"></script>
     </body>
 </html>
