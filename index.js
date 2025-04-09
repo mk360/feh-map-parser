@@ -224,6 +224,7 @@ function loadUnitToForm(unit) {
     FORM_ELEMENTS.stats.displayLevel.value = +unit.displayLevel;
     FORM_ELEMENTS.allyRadio.checked = !unit.isEnemy;
     FORM_ELEMENTS.enemyRadio.checked = unit.isEnemy;
+    console.log(unit);
     for (let stat of ["hp", "atk", "spd", "def", "res"]) {
         FORM_ELEMENTS.stats[stat].input.value = unit.stats[stat];
         FORM_ELEMENTS.stats[stat].slider.value = unit.stats[stat];
@@ -256,6 +257,14 @@ function clearUnitForm() {
     document.querySelector('.character-title').textContent = 'No Unit Selected';
 }
 
+function deleteUnit() {
+    mapEditorState.mapData[mapEditorState.selectedCell[0]][mapEditorState.selectedCell[1]] = null;
+    loadUnitToForm(null);
+    setupGrid();
+};
+
+document.getElementById("delete-unit").onclick = deleteUnit;
+
 function setupGrid() {
     const grid = document.querySelector('.grid');
     
@@ -263,8 +272,8 @@ function setupGrid() {
     grid.innerHTML = '';
     
     // Create cells for a 6x8 grid
-    for (let row = 1; row <= 8; row++) {
-        for (let col = 1; col <= 6; col++) {
+    for (let row = 8; row >= 1; row--) {
+        for (let col = 6; col >= 1; col--) {
             const cell = document.createElement('div');
             cell.className = 'grid-cell';
             cell.setAttribute('data-coords', `${col},${row}`);
@@ -355,12 +364,14 @@ function getUnitFromForm() {
         x: FORM_ELEMENTS.passivex.value,
         displayLevel: +FORM_ELEMENTS.stats.displayLevel.value,
         trueLevel: +FORM_ELEMENTS.stats.trueLevel.value,
-        rarity: +FORM_ELEMENTS.stats.rarity.value,
-        hp: +FORM_ELEMENTS.stats.hp.input.value,
-        atk: +FORM_ELEMENTS.stats.atk.input.value,
-        spd: +FORM_ELEMENTS.stats.spd.input.value,
-        def: +FORM_ELEMENTS.stats.def.input.value,
-        res: +FORM_ELEMENTS.stats.res.input.value,
+        rarity: +FORM_ELEMENTS.stats.rarity.slider.value,
+        stats: {
+            hp: +FORM_ELEMENTS.stats.hp.input.value,
+            atk: +FORM_ELEMENTS.stats.atk.input.value,
+            spd: +FORM_ELEMENTS.stats.spd.input.value,
+            def: +FORM_ELEMENTS.stats.def.input.value,
+            res: +FORM_ELEMENTS.stats.res.input.value,
+        },
         isEnemy: FORM_ELEMENTS.enemyRadio.checked
     };
 }
@@ -530,4 +541,88 @@ cooldownSlider.addEventListener('input', function() {
 cooldownInput.addEventListener('input', function() {
     cooldownSlider.value = this.value;
     cooldownValue.textContent = this.value;
+});
+
+// Map Properties State
+const mapPropertiesState = {
+    limitedTurns: false,
+    turnLimit: 3,
+    mapBackground: "default",
+    victoryCondition: "timed"
+};
+
+// Modal controls
+const mapPropertiesBtn = document.getElementById("map-properties-btn");
+const mapPropertiesModal = document.getElementById("map-properties-modal");
+const closeModalBtn = document.querySelector(".close-modal");
+const savePropertiesBtn = document.getElementById("save-properties");
+const cancelPropertiesBtn = document.getElementById("cancel-properties");
+
+// Form controls
+const limitedTurnsCheckbox = document.getElementById("limited-turns-checkbox");
+const turnLimitInput = document.getElementById("turn-limit");
+const mapBackgroundSelect = document.getElementById("map-background");
+const victoryConditionRadios = document.querySelectorAll('input[name="victory-condition"]');
+
+// Open modal
+mapPropertiesBtn.addEventListener("click", function() {
+    // Load current state into form
+    limitedTurnsCheckbox.checked = mapPropertiesState.limitedTurns;
+    turnLimitInput.value = mapPropertiesState.turnLimit;
+    turnLimitInput.disabled = !mapPropertiesState.limitedTurns;
+    mapBackgroundSelect.value = mapPropertiesState.mapBackground;
+    
+    // Set victory condition radio
+    document.querySelector(`input[name="victory-condition"][value="${mapPropertiesState.victoryCondition}"]`).checked = true;
+    
+    // Show modal
+    mapPropertiesModal.classList.add("show");
+});
+
+// Close modal handlers
+closeModalBtn.addEventListener("click", function() {
+    mapPropertiesModal.classList.remove("show");
+});
+
+cancelPropertiesBtn.addEventListener("click", function() {
+    mapPropertiesModal.classList.remove("show");
+});
+
+// Close modal when clicking outside
+window.addEventListener("click", function(event) {
+    if (event.target === mapPropertiesModal) {
+        mapPropertiesModal.classList.remove("show");
+    }
+});
+
+// Toggle turn limit input enabled/disabled
+limitedTurnsCheckbox.addEventListener("change", function() {
+    turnLimitInput.disabled = !this.checked;
+});
+
+// Save properties
+savePropertiesBtn.addEventListener("click", function() {
+    // Update state with form values
+    mapPropertiesState.limitedTurns = limitedTurnsCheckbox.checked;
+    mapPropertiesState.turnLimit = parseInt(turnLimitInput.value);
+    mapPropertiesState.mapBackground = mapBackgroundSelect.value;
+    
+    // Get selected victory condition
+    const selectedVictoryCondition = document.querySelector('input[name="victory-condition"]:checked');
+    if (selectedVictoryCondition) {
+        mapPropertiesState.victoryCondition = selectedVictoryCondition.value;
+    }
+    
+    // Close modal
+    mapPropertiesModal.classList.remove("show");
+    
+    // Visual feedback
+    const originalText = mapPropertiesBtn.textContent;
+    mapPropertiesBtn.textContent = "Properties Saved!";
+    mapPropertiesBtn.style.backgroundColor = "rgba(100, 255, 100, 0.5)";
+    
+    setTimeout(() => {
+        mapPropertiesBtn.textContent = originalText;
+        mapPropertiesBtn.style.backgroundColor = "";
+    }, 1500);
 });

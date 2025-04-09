@@ -14,8 +14,11 @@
                 <label for="map-file" class="file-input-label">
                     <span>Choose Map File</span>
                 </label>
-                <input type="file" id="map-file" class="file-input">
+                <input type="file" id="map-file" accept=".bin" class="file-input">
                 <button class="action-button">Load Map</button>
+                <div class="map-properties-container">
+                    <button id="map-properties-btn" class="action-button">Map Properties</button>
+                </div>
             </div>
         </header>
         
@@ -26,8 +29,8 @@
                     <script>
                         document.addEventListener('DOMContentLoaded', function() {
                             const grid = document.querySelector('.grid');
-                            for (let row = 1; row <= 8; row++) {
-                                for (let col = 1; col <= 6; col++) {
+                            for (let row = 8; row >= 1; row--) {
+                                for (let col = 6; col >= 1; col--) {
                                     const cell = document.createElement('div');
                                     cell.className = 'grid-cell';
                                     cell.setAttribute('data-coords', `${col},${row}`);
@@ -115,7 +118,9 @@
                         <select id="x-skill" class="form-control">
                         </select>
                     </div>
-                    
+                    <div class="form-group">
+                        <button id="delete-unit" class="">Delete Unit</button>
+                    </div>
                 </div>
                 <div id="Stats" class="tab-content hide">
                     <h3>Unit Stats</h3>
@@ -250,6 +255,63 @@
         <footer>
             Fire Emblem Heroes Map Editor © 2025
         </footer>
+        <div id="map-properties-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Map Properties</h2>
+                    <span class="close-modal">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <!-- Turn Limit Settings -->
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="limited-turns-checkbox">
+                            <span class="checkbox-custom"></span>
+                            Limited Turns
+                        </label>
+                    </div>
+                    
+                    <div class="form-group" id="turn-limit-container">
+                        <label for="turn-limit">Turn Limit</label>
+                        <input type="number" id="turn-limit" class="form-control" min="1" max="99" value="3" disabled>
+                    </div>
+                    
+                    <!-- Map Background -->
+                    <div class="form-group">
+                        <label for="map-background">Map Background</label>
+                        <select id="map-background" class="form-control">
+                            <option value="default">Default</option>
+                            <option value="castle">Castle</option>
+                            <option value="forest">Forest</option>
+                            <option value="mountain">Mountain</option>
+                            <option value="desert">Desert</option>
+                            <option value="beach">Beach</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Victory Conditions -->
+                    <div class="form-group">
+                        <label>Victory Condition</label>
+                        <div class="radio-group">
+                            <label class="radio-label">
+                                <input type="radio" name="victory-condition" value="timed" checked>
+                                <span class="radio-custom ally"></span>
+                                Timed Victory
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="victory-condition" value="free">
+                                <span class="radio-custom enemy"></span>
+                                Free Play
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="cancel-properties" class="action-button cancel">Cancel</button>
+                    <button id="save-properties" class="action-button">Save Changes</button>
+                </div>
+            </div>
+        </div>
         <script src="./index.js"></script>
     </body>
 </html>

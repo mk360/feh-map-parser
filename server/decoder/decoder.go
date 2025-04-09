@@ -135,7 +135,7 @@ func Decode(filename string) MapData {
 
 	index = int(playerPositionsPointer) + 1
 
-	for i := 0; i < int(mapData.TotalPlayerUnits); i++ {
+	for range int(mapData.TotalPlayerUnits) {
 		var playerPosition Coords = Coords{}
 		var rawXBytes = readRawBytes(&byteArray, index, 2)
 		var unlockedXCoords, _ = rawXor(&rawXBytes, []byte{0x32, 0xb3})
@@ -154,7 +154,7 @@ func Decode(filename string) MapData {
 
 	index = 0x109
 
-	for i := 0; i < int(mapData.TotalEnemies); i++ {
+	for i := range int(mapData.TotalEnemies) {
 		var unitStruct UnitData = UnitData{}
 		unitStruct.Spawning = SpawnInfo{}
 		var rawXCoordinates = readRawBytes(&byteArray, index, 2)
