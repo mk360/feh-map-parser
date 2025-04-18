@@ -20,7 +20,7 @@ type MapData struct {
 	TurnsToWin       byte
 	TotalEnemies     int32
 	TotalPlayerUnits int32
-	FileHeader       []byte
+	FileHeader       string
 	PlayerPositions  []Coords
 	TileLayout       []byte
 	Units            []UnitData
@@ -75,7 +75,7 @@ func Decode(filename string) MapData {
 	}
 	byteArray, _ := os.ReadFile(filename)
 	var header = readRawBytes(&byteArray, 1, 32)
-	mapData.FileHeader = header
+	mapData.FileHeader = string(header)
 
 	var index = 0x29
 

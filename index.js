@@ -4,6 +4,8 @@ const mapEditorState = {
     selectedCell: null, // Currently selected cell coordinates
 };
 
+let rawMapData;
+
 const unitNameSelect = document.getElementById("name");
 const unitBanner = document.getElementById("current-unit-banner");
 const unitName = document.getElementById("current-unit-name");
@@ -75,7 +77,6 @@ loadSkills();
 
 function initializeMapData(cols, rows) {
     mapEditorState.mapData = Array(cols + 1).fill().map(() => Array(rows + 1).fill(null));
-    console.log(mapEditorState.mapData);
 };
 
 initializeMapData(6, 8);
@@ -171,7 +172,7 @@ document.addEventListener('DOMContentLoaded', function() {
      });
      
      // Add file loading functionality
-     const loadButton = document.querySelector('.action-button');
+     const loadButton = document.querySelector('.action-button:not(#save-map)');
      loadButton.addEventListener('click', function() {
          const fileInput = document.getElementById('map-file');
          if (fileInput.files.length > 0) {
@@ -224,12 +225,10 @@ function loadUnitToForm(unit) {
     FORM_ELEMENTS.stats.displayLevel.value = +unit.displayLevel;
     FORM_ELEMENTS.allyRadio.checked = !unit.isEnemy;
     FORM_ELEMENTS.enemyRadio.checked = unit.isEnemy;
-    console.log(unit);
     for (let stat of ["hp", "atk", "spd", "def", "res"]) {
         FORM_ELEMENTS.stats[stat].input.value = unit.stats[stat];
         FORM_ELEMENTS.stats[stat].slider.value = unit.stats[stat];
     }
-    console.log(unit);
     if (unit.cooldown === -1) { // default: max cooldown of equipped special
         FORM_ELEMENTS.specialControls.defaultCooldownRadio.click();
     } else {
@@ -318,7 +317,6 @@ function setupGrid() {
             // Add visual indicator if cell has unit
             if (mapEditorState.mapData[col] && mapEditorState.mapData[col][row]) {
                 const unitData = mapEditorState.mapData[col][row];
-                console.log(UNITS[unitData.name]);
                 const unitMarker = document.createElement('div');
                 unitMarker.className = 'unit-indicator';
                 unitMarker.style.position = 'absolute';
@@ -432,6 +430,8 @@ for (let unit in UNITS) {
 }
 
 fetch("http://localhost:3535/map?filename=S8084C.bin").then((r) => r.json()).then((response) => {
+    rawMapData = response;
+    rawMapData.FileHeader = rawMapData.FileHeader.split("").map(c => c.charCodeAt(0));
     for (let unit of response.Units) {
         const { X, Y, Name } = unit;
         const img = document.createElement("img");
@@ -439,7 +439,6 @@ fetch("http://localhost:3535/map?filename=S8084C.bin").then((r) => r.json()).the
         img.loading = "lazy";
         img.src = `https://feheroes.fandom.com/Special:Filepath/${UNITS[Name].wikiName.replace(" ENEMY", "").replace(/ /g, "_")}_Mini_Unit_Idle.png`;
         const groupedSkills = Object.groupBy(unit.Skills, skill => skill.slot);
-        console.log(groupedSkills)
         
         mapEditorState.mapData[X][Y] = {
             name: unit.Name,
@@ -533,7 +532,6 @@ const cooldownInput = document.getElementById('custom-cooldown-input');
 const cooldownValue = document.querySelector('#custom-cooldown-container .range-value');
 
 cooldownSlider.addEventListener('input', function() {
-    console.log("bondour", this.value)
     cooldownInput.value = this.value;
     cooldownValue.textContent = this.value;
 });
@@ -626,3 +624,79 @@ savePropertiesBtn.addEventListener("click", function() {
         mapPropertiesBtn.style.backgroundColor = "";
     }, 1500);
 });
+
+document.getElementById("save-map").onclick = function() {
+    const payload = {
+        BaseTerrain: rawMapData.BaseTerrain,
+        FileHeader: rawMapData.FileHeader,
+        Height: rawMapData.Height,
+        Id: rawMapData.Id,
+        TurnsToDefend: rawMapData.TurnsToDefend,
+        TurnsToWin: rawMapData.TurnsToWin,
+        TileLayout: rawMapData.TileLayout,
+        Units: [],
+        PlayerPositions: [],
+        Width: rawMapData.Width,
+    };
+    const enemies = [];
+    const allies = [];
+    for (let column = 0; column < mapEditorState.mapData.length; column++) {
+        for (let row = 0; row < mapEditorState.mapData[column].length; row++) {
+            const data = mapEditorState.mapData[column][row];
+            if (data) {
+                const formatted = reformatUnit(data, column, row);
+                if (formatted.isEnemy) {
+                    enemies.push(formatted);
+                    payload.Units.push(formatted);
+                } else {
+                    allies.push(formatted);
+                    payload.Units.push(formatted);
+                }
+            }
+        }
+    }
+    payload.TotalEnemies = enemies.length;
+    payload.TotalPlayerUnits = allies.length;
+    console.log(JSON.stringify(payload));
+    console.log(payload)
+    fetch("http://localhost:3535/map", {
+        method: "POST",
+        body: JSON.stringify(payload)
+    });
+}
+
+function reformatUnit(unitData, x, y) {
+    const data = {
+        skills: [],
+        stats: {}
+    };
+    data.name = unitData.name;
+    data.rarity = unitData.rarity;
+    data.isEnemy = unitData.isEnemy;
+    data.trueLevel = unitData.trueLevel;
+    data.level = unitData.displayLevel;
+    data.stats = unitData.stats;
+    data.column = x;
+    data.row = y;
+    data.unknown = 100;
+    data.spawning = {
+        dependencyHero: "",
+        remainingBeforeSpawning: 0,
+        defeatBeforeSpawning: 0
+    };
+    data.AI = {
+        breakTerrain: true,
+        goBackToHomeTile: false,
+        movementDelay: -1,
+        movementGroup: 111,
+        startTurn: 1,
+    };
+    data.specialCooldown = unitData.cooldown;
+    for (let slot of ["weapon", "assist", "special", "a", "b", "c", "s", "x"]) {
+        if (unitData[slot]) {
+            data.skills.push(unitData[slot]);
+        }
+    }
+
+    return data;
+}
